@@ -76,6 +76,7 @@ class _DeckPageState extends State<DeckPage> {
             itemBuilder: (context, index) {
               final card = cards[index];
               return ListTile(
+                isThreeLine: true,
                 leading: card.frontImageBytes != null
                     ? Image.memory(
                         card.frontImageBytes!,
@@ -85,7 +86,20 @@ class _DeckPageState extends State<DeckPage> {
                       )
                     : null,
                 title: Text(card.front),
-                subtitle: Text(card.back),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(card.back),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Next review: ${card.due.toLocal().toString().split(' ')[0]}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

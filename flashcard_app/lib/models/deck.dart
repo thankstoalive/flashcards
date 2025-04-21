@@ -13,6 +13,13 @@ class Deck {
         'id': id,
         'name': name,
       };
+  /// Construct a [Deck] from a map (e.g., from JSON backup)
+  factory Deck.fromMap(Map<String, dynamic> map) {
+    return Deck(
+      id: map['id'] as String,
+      name: map['name'] as String,
+    );
+  }
 }
 
 /// Hive adapter for [Deck]

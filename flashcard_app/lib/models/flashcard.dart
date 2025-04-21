@@ -60,6 +60,31 @@ class Flashcard {
             frontImageBytes != null ? base64Encode(frontImageBytes!) : null,
         'backImage': backImageBytes != null ? base64Encode(backImageBytes!) : null,
       };
+  /// Construct a [Flashcard] from a map (e.g., from JSON backup)
+  factory Flashcard.fromMap(Map<String, dynamic> map) {
+    return Flashcard(
+      id: map['id'] as String,
+      deckId: map['deckId'] as String,
+      front: map['front'] as String,
+      back: map['back'] as String,
+      tags: (map['tags'] as List).cast<String>(),
+      frontImageBytes: map['frontImage'] != null
+          ? base64Decode(map['frontImage'] as String)
+          : null,
+      backImageBytes: map['backImage'] != null
+          ? base64Decode(map['backImage'] as String)
+          : null,
+      interval: map['interval'] is int ? map['interval'] as int : 0,
+      easeFactor: map['easeFactor'] != null
+          ? (map['easeFactor'] as num).toDouble()
+          : 2.5,
+      repetition: map['repetition'] is int ? map['repetition'] as int : 0,
+      due: map.containsKey('due') && map['due'] is String
+          ? DateTime.parse(map['due'] as String)
+          : DateTime.now(),
+      lastGrade: map['lastGrade'] is int ? map['lastGrade'] as int : 0,
+    );
+  }
 }
 
 /// Hive adapter for [Flashcard]

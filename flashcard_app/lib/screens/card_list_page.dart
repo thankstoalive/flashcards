@@ -246,6 +246,7 @@ class _CardListPageState extends State<CardListPage> {
               final card = cards[index];
               final deck = _deckBox.get(card.deckId);
               return ListTile(
+                isThreeLine: true,
                 title: Text(card.front),
                 leading: card.frontImageBytes != null
                     ? Image.memory(
@@ -263,6 +264,14 @@ class _CardListPageState extends State<CardListPage> {
                     Text(
                       'Deck: ${deck?.name ?? ''} | Tags: ${card.tags.join(', ')} | Difficulty: ${_gradeLabel(card.lastGrade)}',
                       style: const TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Next review: ${card.due.toLocal().toString().split(' ')[0]}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ],
                 ),

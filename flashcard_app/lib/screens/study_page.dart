@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/flashcard.dart';
 import '../widgets/flashcard_view.dart';
+import '../services/spaced_repetition_service.dart';
 
 /// Page for studying flashcards in a deck using SM-2 algorithm.
 class StudyPage extends StatefulWidget {
@@ -44,34 +45,10 @@ class _StudyPageState extends State<StudyPage> {
     }
   }
 
-  void _answer(int grade) {
+  /// Handle user grade (1=Hard,2=Normal,3=Easy) via SM-2 algorithm service
+  Future<void> _answer(int grade) async {
     final card = _dueCards[_currentIndex];
-    // Map grade(1=Hard,2=Normal,3=Easy) to SM-2 quality (2,3,5)
-    final quality = grade == 1 ? 2 : (grade == 2 ? 3 : 5);
-    if (quality < 3) {
-      card.repetition = 0;
-      card.interval = 1;
-    } else {
-      if (card.repetition == 0) {
-        card.interval = 1;
-      } else if (card.repetition == 1) {
-        card.interval = 6;
-      } else {
-        card.interval = (card.interval * card.easeFactor).round();
-      }
-      card.repetition += 1;
-    }
-    // Update ease factor
-    double ef = card.easeFactor +
-        (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-    if (ef < 1.3) ef = 1.3;
-    card.easeFactor = ef;
-    // Schedule next review
-    card.due = DateTime.now().add(Duration(days: card.interval));
-    card.lastGrade = grade;
-    // Save
-    _cardBox.put(card.id, card);
-    // Move to next
+    await SpacedRepetitionService.gradeCard(card, grade);
     setState(() {
       _currentIndex += 1;
       _showFront = true;

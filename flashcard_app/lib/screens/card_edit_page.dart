@@ -189,7 +189,13 @@ class _CardEditPageState extends State<CardEditPage> {
             const SizedBox(height: 8),
             TextField(
               controller: _frontController,
-              decoration: const InputDecoration(labelText: 'Front Text'),
+              decoration: const InputDecoration(
+                labelText: 'Front Text',
+                alignLabelWithHint: true,
+              ),
+              keyboardType: TextInputType.multiline,
+              minLines: 3,
+              maxLines: null,
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
@@ -222,8 +228,13 @@ class _CardEditPageState extends State<CardEditPage> {
             const SizedBox(height: 8),
             TextField(
               controller: _backController,
-              decoration: const InputDecoration(labelText: 'Back Text'),
-              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(
+                labelText: 'Back Text',
+                alignLabelWithHint: true,
+              ),
+              keyboardType: TextInputType.multiline,
+              minLines: 3,
+              maxLines: null,
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),

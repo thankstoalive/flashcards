@@ -3,12 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../main.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
-// Web download
-// import 'dart:html' as html;  // removed web-only imports
-// import 'package:file_selector/file_selector.dart';
+import '../services/backup_service.dart';
 
 import '../models/flashcard.dart';
 
@@ -25,8 +20,17 @@ class DeckListPage extends StatefulWidget {
 }
 
 class _DeckListPageState extends State<DeckListPage> {
-  final Box<Deck> _deckBox = Hive.box<Deck>('decks');
+  late Box<Deck> _deckBox;
+  // Flashcard box to compute per-deck review info
+  late Box<Flashcard> _cardBox;
   final _uuid = const Uuid();
+
+  @override
+  void initState() {
+    super.initState();
+    _deckBox = Hive.box<Deck>('decks');
+    _cardBox = Hive.box<Flashcard>('flashcards');
+  }
 
   void _addDeck() async {
     final nameController = TextEditingController();
@@ -82,19 +86,11 @@ class _DeckListPageState extends State<DeckListPage> {
     _deckBox.delete(id);
   }
   
-  /// Exports all decks and cards as JSON and saves to file (mobile only)
-  Future<void> _exportBackup() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Backup is supported on mobile/desktop only.')),
-    );
-  }
+  /// Trigger backup/export functionality (web or stub)
+  Future<void> _exportBackup() => BackupService.exportBackup(context);
   
-  /// Imports all decks and cards from a JSON backup file (mobile only)
-  Future<void> _importBackup() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Import is supported on mobile/desktop only.')),
-    );
-  }
+  /// Trigger import functionality (web or stub)
+  Future<void> _importBackup() => BackupService.importBackup(context);
 
   @override
   Widget build(BuildContext context) {
@@ -140,29 +136,67 @@ class _DeckListPageState extends State<DeckListPage> {
       ),
       body: ValueListenableBuilder(
         valueListenable: _deckBox.listenable(),
-        builder: (context, Box<Deck> box, _) {
-          final decks = box.values.toList();
-          if (decks.isEmpty) {
-            return const Center(child: Text('No decks. Add one!'));
-          }
-          return ListView.builder(
-            itemCount: decks.length,
-            itemBuilder: (context, index) {
-              final deck = decks[index];
-              return ListTile(
-                title: Text(deck.name),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DeckPage(deckId: deck.id),
+        builder: (context, Box<Deck> deckBox, _) {
+          return ValueListenableBuilder(
+            valueListenable: _cardBox.listenable(),
+            builder: (context, Box<Flashcard> cardBox, _) {
+              final decks = deckBox.values.toList();
+              if (decks.isEmpty) {
+                return const Center(child: Text('No decks. Add one!'));
+              }
+              return ListView.builder(
+                itemCount: decks.length,
+                itemBuilder: (context, index) {
+                  final deck = decks[index];
+                  final now = DateTime.now();
+                  final deckCards = cardBox.values
+                      .where((c) => c.deckId == deck.id)
+                      .toList();
+                  final dueCards = deckCards
+                      .where((c) => !c.due.isAfter(now))
+                      .toList();
+                  // Build subtitle: total cards, due info
+                  final total = deckCards.length;
+                  final dueCount = dueCards.length;
+                  String subtitleText = '$total cards';
+                  if (total > 0) {
+                    if (dueCount > 0) {
+                      dueCards.sort((a, b) => a.due.compareTo(b.due));
+                      final next = dueCards
+                          .first.due
+                          .toLocal()
+                          .toString()
+                          .split(' ')[0];
+                      subtitleText += ' | Next: $next • Due: $dueCount';
+                    } else {
+                      subtitleText += ' | No cards due';
+                    }
+                  }
+                  return ListTile(
+                    isThreeLine: true,
+                    title: Text(deck.name),
+                    subtitle: Text(
+                      subtitleText,
+                      style: const TextStyle(
+                          fontSize: 12, fontStyle: FontStyle.italic),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DeckPage(deckId: deck.id),
+                        ),
+                      );
+                    },
+                    trailing: IconButton(
+                      icon: const Icon(
+                        Icons.delete,
+                        color: Colors.redAccent,
+                      ),
+                      onPressed: () => _deleteDeck(deck.id),
                     ),
                   );
                 },
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.redAccent),
-                  onPressed: () => _deleteDeck(deck.id),
-                ),
               );
             },
           );
